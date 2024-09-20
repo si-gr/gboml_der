@@ -1,0 +1,44 @@
+#TIMEHORIZON
+T = 365 * 24; // number of hours in two years
+
+#NODE GAS_STORAGE
+//TODO Aging, andere Investmentkosten bei steigender Kapazität
+//TODO efficiency. Wie hoch ist die?
+#PARAMETERS
+    capex = 2.8; //€/kWh 
+    depreciation = 25; // lifetime = 25 years 
+    annual_capex = capex / depreciation;
+    opex = 0.056; //€/(kWh*a) 
+    efficiency = 0.8;
+    power = 3; //maximale Leistung beträgt 3kw (d.h. es können max 3kwh pro Stunde in den Speicher geladen/entladen werden
+    max_capacity = 1000; //storage should be not bigger than 1000 kWh
+#VARIABLES
+    internal integer: capacity;
+    internal: investment_cost;
+    internal: soc[T];
+    external: charge[T];
+    external: discharge[T];
+#CONSTRAINTS
+    capacity >= 0;
+    capacity <= max_capacity;  
+    soc[t] >= 0;
+    charge[t] >= 0;
+    charge[t] <= power;
+    discharge[t] >= 0;
+    discharge[t] <= power;
+    soc[t] <= capacity;
+    charge[t] <= capacity - soc[t];
+    discharge[t] <= soc[t];
+    soc[t+1] == soc[t] + efficiency * charge[t] - discharge[t];
+    soc[0] == 0;
+    soc[0] == soc[T-1]; //batterie soll gleichen Ladestand am Anfang und am Ende haben
+    investment_cost == annual_capex * capacity;
+#OBJECTIVES
+    min: investment_cost;
+
+
+
+//#HYPEREDGE POWER_BALANCE  
+//GAS CONSTRAINTS
+//    DISTRIBUTION_GAS.gas_import_amount[t] + ELEKTROLYSEUR.gas[t] + GAS_STORAGE.discharge[t] == DEMAND_GAS.consumption_gas[t] + GAS_STORAGE.charge[t];
+

@@ -1,0 +1,65 @@
+#TIMEHORIZON
+T = 365 * 24; // number of hours in one year
+
+#GLOBAL
+    num_households = 100;
+    number_years_horizon = T/8760;
+
+#NODE SOLAR_PV = import SOLAR_PV from "../components/solar_pv_exp.txt";
+
+#NODE BATTERY = import BATTERY from "../components/battery_storage_v1.txt";
+
+#NODE CHP_PLANT = import CHP_PLANT from "../components/chp_plant.txt";
+
+
+
+
+    
+#NODE DISTRIBUTION_EL = import DISTRIBUTION_EL from "../components/distribution_el_with_export.txt";
+
+
+#HYPEREDGE ELECTRICITY
+#CONSTRAINTS
+    DISTRIBUTION_EL.electricity_import[t] + SOLAR_PV.solar_generated[t] 
+    + BATTERY.discharge[t] + CHP_PLANT.electricity_generated[t] 
+    == 
+    BATTERY.charge[t]+ PEM.electricity[t]
+    + DISTRIBUTION_EL.electricity_export[t];
+
+
+
+#NODE DISTRIBUTION_HEAT
+#PARAMETERS
+    //price_heat = 0.0608; // 6,08ct/kWh -> 0.0608€/kWh
+    price_heat = 0.002; // 0,2ct/kWh -> 0.0608€/kWh
+#VARIABLES
+    internal: operating_cost_heat[T];
+    external: heat_export_amount[T];
+#CONSTRAINTS
+    heat_export_amount[t] >= 0;
+    operating_cost_heat[t] == -1 * price_heat * heat_export_amount[t];
+#OBJECTIVES
+    min: operating_cost_heat[t];
+
+#NODE DISTRIBUTION_GAS
+#PARAMETERS
+    price_gas = import "../../data/gas_market_prices_2019.csv";
+#VARIABLES
+    internal: operating_cost_gas[T];
+    external: gas_import_amount[T];
+#CONSTRAINTS
+    gas_import_amount[t] >= 0;
+    //gas_import_amount[t] <= 50;
+    operating_cost_gas[t] == price_gas[mod(t, 8760)] * gas_import_amount[t];
+#OBJECTIVES
+    min: operating_cost_gas[t];
+
+#NODE PEM = import PEM from "../components/electrolyser.txt";
+
+
+#HYPEREDGE POWER_BALANCE
+#CONSTRAINTS
+    CHP_PLANT.heat_generated[t] == DISTRIBUTION_HEAT.heat_export_amount[t];
+    DISTRIBUTION_GAS.gas_import_amount[t] + PEM.gas[t]
+    == 
+    CHP_PLANT.consumption_gas[t];

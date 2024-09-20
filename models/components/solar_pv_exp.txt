@@ -1,0 +1,53 @@
+#TIMEHORIZON
+    T = 365 * 24; // number of hours in one year
+
+#NODE SOLAR_PV
+#PARAMETERS
+    capex = 1100; // €/kWp
+    deprecation = 40; // lifetime
+    annual_capex_1 = capex / deprecation;
+    annual_capex_2 = annual_capex_1 * 0.8;
+    annual_capex_3 = annual_capex_1 * 0.6;
+    pv_capacity_factors = import "../../data/pv_data/pv.csv";
+    // sizing
+    max_capacity_1 = 10; //kW
+    max_capacity_2 = 100; //kW
+    max_capacity_3 = 1000; //kW
+    b1 = annual_capex_1 * max_capacity_1;
+    b2 = annual_capex_2 * max_capacity_2 + b1;
+    b3 = annual_capex_3 * max_capacity_3 + b2;
+    a1 = max_capacity_1;
+    a2 = a1 + max_capacity_2;
+    a3 = a2 + max_capacity_3;
+#VARIABLES
+    internal: investment_cost;
+    internal integer: capacity1; //capacity in kWp
+    internal integer: capacity2; //capacity in kWp
+    internal integer: total_pv;
+    internal binary: y1;
+    internal binary: y2;
+    internal binary: y3;
+    internal integer: z1;
+    internal integer: z2;
+    internal integer: z3;
+    internal integer: z4;
+    external: solar_generated[T];
+#CONSTRAINTS
+    capacity1 >= 0;
+    capacity2 >= 0;
+    //capacity <= max_capacity;
+    total_pv == 0 * z1 + a1 * z2 + a2 * z3 + a3 * z4;
+    solar_generated[t] <= pv_capacity_factors[mod(t, 8784)] * (total_pv);
+    solar_generated[t] >= 0;
+    z1 + z2 + z3 + z4 == 1;
+    z1 <= y1;
+    z2 <= y1 + y2;
+    z3 <= y2 + y3;
+    z4 <= y3;
+    y1 + y2 + y3== 1;
+    //y0 == 0 or y0 == 1;
+    //y1 == 0 or y1 == 1;
+    //y2 == 0 or y2 == 1;
+    investment_cost == global.number_years_horizon * (0 * z1 + b1 * z2 + b2 * z3 + b3 * z4);
+#OBJECTIVES
+    min: investment_cost;

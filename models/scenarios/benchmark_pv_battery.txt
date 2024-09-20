@@ -1,0 +1,29 @@
+#TIMEHORIZON
+T = 365 * 24; // number of hours in one year
+
+#GLOBAL
+    num_households = 10;
+    number_years_horizon = T/8760;
+
+#NODE SOLAR_PV = import SOLAR_PV from "../components/solar_pv_exp.txt";
+
+#NODE BATTERY = import BATTERY from "../components/battery_storage_v1.txt";
+
+
+#NODE DEMAND_EL
+#PARAMETERS 
+    demand_el = import "../../data/LastprofilHaushalt.csv";
+#VARIABLES
+    external: consumption_el[T];
+#CONSTRAINTS
+    consumption_el[t] == demand_el[mod(t, 8760)]*global.num_households;
+    
+    
+#NODE DISTRIBUTION_EL = import DISTRIBUTION_EL from "../components/distribution_el_with_export.txt";
+
+
+#HYPEREDGE ELECTRICITY
+#CONSTRAINTS
+    DISTRIBUTION_EL.electricity_import[t] + SOLAR_PV.solar_generated[t] 
+    + BATTERY.discharge[t] == BATTERY.charge[t] + DISTRIBUTION_EL.electricity_export[t];
+    //+ BATTERY.discharge[t] == DEMAND_EL.consumption_el[t] + BATTERY.charge[t] + DISTRIBUTION_EL.electricity_export[t];

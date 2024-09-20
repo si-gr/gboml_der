@@ -1,0 +1,38 @@
+#TIMEHORIZON
+T = 10 * 24; // number of hours in one year
+
+
+#NODE DISTRIBUTION_EL
+#PARAMETERS
+    price_electricity = import "../../data/electricity_market_prices_2019.csv";
+    price_electricity_export = import "../../data/electricity_market_prices_2019_export.csv";
+    max_grid_load = import "../../data/grid_max_load.csv";
+    max_grid_gen = import "../../data/grid_max_gen.csv";
+#VARIABLES
+    internal: operating_cost_electricity[T];
+    external: electricity_import[T];
+    internal: reward_export[T];
+    external: electricity_export[T];
+    internal: costs_import[T];
+    //internal binary: y1;
+    //internal binary: y2;
+
+#CONSTRAINTS
+    max_grid_load[t] >= electricity_import[t] - electricity_export[t];
+    max_grid_gen[t] >= electricity_export[t] - electricity_import[t];
+    reward_export[t] == electricity_export[t] * price_electricity_export[t]; 
+    costs_import[t] == electricity_import[t] * price_electricity[t];
+    operating_cost_electricity[t] ==  costs_import[t] - reward_export[t];
+    electricity_import[t] >= 0; 
+    electricity_export[t] >= 0;
+    //y1 + y2 == 1;
+    //electricity_import[t] <= y1 * max_grid_load[t];
+    //electricity_export[t] <= y2 * max_grid_gen[t];
+    
+    
+#OBJECTIVES
+    min: operating_cost_electricity[t];
+    
+//Hyperede beachten: 
+//DISTRIBUTION_EL.electricity_import[t] AND 
+//DISTRIBUTION_EL.electricity_export[t]

@@ -1,0 +1,34 @@
+// CO2 berücksichtingen
+// Investitionskosten 
+#TIMEHORIZON
+T = 365 * 24; // number of hours in one year
+
+#NODE CHP_PLANT
+#PARAMETERS
+    capex = 550 ; // €/kW
+    opex = 12; // €/(kW*a)
+    deprecation = 15; //deprecation over 15 rsyea
+    annual_capex = capex / deprecation; // annual_capex per kW
+    heating_value = 10.5; // Heating value: 10-11.1 kWh/m3 (source: EI1) 
+    thermal_efficiency = 0.6;
+    el_efficiency = 0.3;  
+    //max_power = 100; // kW
+#VARIABLES
+    internal: investment_cost;
+    internal integer: el_power;
+    external: electricity_generated[T]; // kWh/h
+    external: heat_generated[T];
+    external: consumption_gas[T];
+#CONSTRAINTS
+    el_power >= 0;
+    //el_power <= max_power;
+    electricity_generated[t] <= el_power;
+    consumption_gas[t] == electricity_generated[t] / el_efficiency;
+    // heat_generated = thermal_efficiency*consumption_gas[t]; 
+    heat_generated[t] == thermal_efficiency*electricity_generated[t] / el_efficiency;
+    heat_generated[t] >= 0;
+    electricity_generated[t] >= 0;
+    // so ist das pro Jahr => angepasst am timehorizon
+    investment_cost == global.number_years_horizon*(annual_capex + opex) * el_power;
+#OBJECTIVES
+    min: investment_cost;

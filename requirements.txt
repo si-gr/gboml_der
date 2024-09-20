@@ -1,0 +1,10 @@
+gboml>=0.1.9
+gurobipy
+numpy
+ipykernel
+entsoe-py
+ipython
+ipywidgets
+matplotlib
+numpy
+pandas

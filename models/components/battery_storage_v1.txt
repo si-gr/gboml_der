@@ -1,0 +1,36 @@
+#TIMEHORIZON
+T = 365 * 24; // number of hours in one year
+
+#NODE BATTERY
+//TODO Aging, andere Investmentkosten bei steigender Kapazität
+#PARAMETERS
+    capex = 350; //€/kWh 
+    deprecation = 10; //lifetime = 10 years
+    annual_capex = capex / deprecation;
+    opex = 2; // €/(kWh*a)
+    efficiency = 0.95;
+    max_power = 2; // max 2 C per hour can be charged/discharged
+    max_capacity = 10000 * global.num_households;
+    self_discharge = 0.00004;// monthly self discharge of 3%  -> ca. 0.00004 per hour (source: https://www.solarserver.de/wissen/basiswissen/pv-speicher/, https://de.wikipedia.org/wiki/Selbstentladung)
+#VARIABLES
+    internal integer: capacity;
+    internal: investment_cost;
+    internal: soc[T];
+    external: charge[T];
+    external: discharge[T];
+#CONSTRAINTS
+    capacity >= 0;
+    capacity <= max_capacity;
+    soc[t] >= 0;
+    charge[t] >= 0;
+    charge[t] <= capacity / max_power;
+    discharge[t] >= 0;
+    discharge[t] <= capacity / max_power;
+    soc[t] <= capacity;
+    charge[t] <= capacity - soc[t];
+    discharge[t] <= soc[t];
+    soc[t+1] == (1 - self_discharge) * soc[t] + efficiency * charge[t] - discharge[t] / efficiency;
+    soc[0] == soc[T-1]; //battery should have the same charge level at the beginning and at the end
+    investment_cost == global.number_years_horizon*(annual_capex + opex) * capacity;
+#OBJECTIVES
+    min: investment_cost;

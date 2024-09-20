@@ -1,0 +1,40 @@
+#TIMEHORIZON
+T = 365 * 24; // number of hours in one year
+
+
+#NODE PEM
+#PARAMETERS
+    capex_methanation = 700; // €/kW
+    capex_pem = 722; // €/kW
+    opex_pem = 6.08; // €/(kW*a)
+    opex_methanation = 12; // €/(kW*a)
+    deprecation = 20; 
+    annual_capex_pem = capex_pem/ deprecation; // capex=600 => invest
+    annual_capex_methanation = capex_methanation/ deprecation; // capex=600 => invest
+    efficiency_pem = 0.74; // conversion losses electricity - hydrogen
+    efficiency_methanation = 0.86;
+#VARIABLES
+    internal: investment_cost_pem;
+    internal: investment_cost_methanation;
+    internal integer: capacity_pem; //capacity in kwP
+    internal integer: capacity_methanation;
+    external: hydrogen[T];
+    external: electricity[T];
+    external: gas[T]; //gas amount produced with methanation
+    internal: total_investment_costs;
+#CONSTRAINTS
+    capacity_pem >= 0;
+    //capacity_pem <= 100;
+    hydrogen[t] == electricity[t] * efficiency_pem;
+    hydrogen[t] <= capacity_pem;
+    hydrogen[t] >=0;
+    investment_cost_pem == (annual_capex_pem+opex_pem) * capacity_pem;    
+    capacity_methanation >= 0;
+    //capacity_methanation <= 100; 
+    gas[t] == hydrogen[t] * efficiency_methanation;
+    gas[t] <= capacity_methanation;
+    gas[t] >= 0;
+    investment_cost_methanation == (annual_capex_methanation + opex_methanation) * capacity_methanation;
+    total_investment_costs ==   global.number_years_horizon* (investment_cost_pem + investment_cost_methanation);
+#OBJECTIVES
+    min: total_investment_costs;
